@@ -30,12 +30,23 @@ def kcrossfold(heuristics: set, dataframe: pandas.DataFrame) -> float:
     return successRate
 
 def main():
-    dataframe = pandas.read_csv("./CS170_Tiny_Data__26.txt", '  ')
+    dataframe = pandas.read_fwf("./CS170_Tiny_Data__26.txt", header=None)
+    heuristics = set() #Begin with an empty set
+    qualityList = []
+    for column in dataframe.columns:
+        bestColumn = None
+        maxQuality = DEFAULT_RATE
+        for innerColumn in dataframe.columns:
+            if(column != innerColumn and not (innerColumn in heuristics)):
+                columnQuality = kcrossfold(heuristics + innerColumn, dataframe)
+                if bestColumn == None or columnQuality > maxQuality:
+                    bestColumn = innerColumn
+                    maxQuality = columnQuality
+        if bestColumn != None:
+            print(f"Best next heuristic to add is {bestColumn}")
+            set.add(bestColumn)
+            qualityList.append(maxQuality)
     #TODO: User inputs their own file name.
-    for row in dataframe.iterrows():
-        # print(row)
-        for column in row[1]: #1 index is the actual columns.
-            print(column)
 
 if __name__ == "__main__":
     main()
