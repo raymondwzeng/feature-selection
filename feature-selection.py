@@ -2,53 +2,56 @@
 # A simple program designed to finish project 2 of CS170
 import pandas
 import math
+import row
 
 DEFAULT_RATE = 0.50
 
 # Returns the integer corresponding to the class that the series should be.
-def nearestNeighborClassify(heuristics: set, series: pandas.Series, dataframe: pandas.DataFrame) -> int:
-    closestNeighbor: pandas.Series = None
+def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[row.row]) -> int:
+    closestNeighbor: row.row = None
     minDistance: float = math.inf
-    for row in dataframe.iterrows():
+    for innerRow in dataframe:
         sumDistance: float = 0
-        if(row[0] != series[0]): #Only compare distance with other rows, otherwise closest neighbor would be itself
+        if(innerRow != series): #Only compare distance with other rows, otherwise closest neighbor would be itself
             for heuristic in heuristics:
                 # print(f"Row {row[0]} with {row[1][heuristic]} and row {series[0]} with {series[1][heuristic]}")
-                squaredDistance = pow(row[1][heuristic] - series[1][heuristic], 2)
+                squaredDistance = pow(innerRow.selectionData[heuristic] - series.selectionData[heuristic], 2)
                 sumDistance = sumDistance + squaredDistance
             # print(f"The total distance across all heuristics is {sumDistance}.")
             if closestNeighbor == None or sumDistance < minDistance:
                 # print(f"The new closest neighbor is {row[0]}")
                 minDistance = sumDistance
-                closestNeighbor = row
+                closestNeighbor = innerRow
     # print(f"The closest neighbor is {closestNeighbor} with class {closestNeighbor[0]}")
-    return closestNeighbor[1][0] #The 0th column is always the class.
+    return closestNeighbor.selectionClass #The 0th column is always the class.
 
 # Performs leave-one-out KxF across all rows, returning the percentage of success.
 # Takes a set of numbers indicating the column included in heuristics.
-def kcrossfold(heuristics: set, dataframe: pandas.DataFrame) -> float:
+def kcrossfold(heuristics: set, dataframe: list[row.row]) -> float:
     numRuns = 0
     numSuccess = 0
     if len(heuristics) == 0: # Return the default rate if we have an empty set.
         return DEFAULT_RATE
-    for row in dataframe.iterrows():
-        guessClass: int = nearestNeighborClassify(heuristics, row, dataframe)
-        if(nearestNeighborClassify(heuristics, row, dataframe) == row[1][0]):
+    for innerRow in dataframe:
+        if(nearestNeighborClassify(heuristics, innerRow, dataframe) == innerRow.selectionClass):
             numSuccess += 1
         numRuns += 1
     return numSuccess/numRuns
 
 # Performs forward selection on all of the columns and returns the best set for the job.
-def forwardSelection(dataframe: pandas.DataFrame) -> set():
+def forwardSelection(dataframe: list[row.row]) -> set():
     bestSet = None
     bestQuality = -math.inf
     heuristics = set() #Begin with an empty set
     qualityList = []
-    for _ in range(len(dataframe.columns)): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
+    if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
+        return heuristics
+    NUM_COLUMNS: int = len(dataframe[0].selectionData)
+    for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestColumn = None
-        maxQuality = DEFAULT_RATE
-        for innerColumn in dataframe.columns: # Check all of the columns each time
-            if innerColumn > 0 and not innerColumn in heuristics: # Avoid column 0 (the class)
+        maxQuality = -math.inf
+        for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
+            if not innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
                 setCopy = heuristics.copy()
                 setCopy.add(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
@@ -58,7 +61,7 @@ def forwardSelection(dataframe: pandas.DataFrame) -> set():
                     maxQuality = columnQuality
                 if bestSet == None or columnQuality > bestQuality: # Update the best set so far
                     bestSet = setCopy
-                    bestQuality = maxQuality
+                    bestQuality = columnQuality
         if bestColumn != None:
             print(f"Best next heuristic to add is {bestColumn}")
             heuristics.add(bestColumn)
@@ -66,41 +69,47 @@ def forwardSelection(dataframe: pandas.DataFrame) -> set():
     print(f"Quality list: {qualityList}")
     return bestSet 
 
-# Performs backward selection, starting with the full set and eliminating one at a time. Also returns the best set to use.
-def backwardSelection(dataframe: pandas.DataFrame) -> set():
+# Performs backward elimination on all of the columns and returns the best set for the job.
+def backwardElimination(dataframe: list[row.row]) -> set():
     bestSet = None
     bestQuality = -math.inf
-    heuristics = set() #Begin with an empty set
-    for column in dataframe.columns: # Copy the heuristics into the set.
-        if column > 0: # 0 column is class label
-            heuristics.add(column)
     qualityList = []
-    for _ in range(len(dataframe.columns)): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
-        bestColumn = None
-        maxQuality = DEFAULT_RATE
-        for innerColumn in dataframe.columns: # Check all of the columns each time
-            if innerColumn > 0 and innerColumn in heuristics: # Avoid column 0 (the class)
+    if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
+        return heuristics
+    NUM_COLUMNS: int = len(dataframe[0].selectionData)
+    heuristics: set[int] = set() # Begin with an empty set
+    for index in range(NUM_COLUMNS): # Populate empty set
+        heuristics.add(index)
+    for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
+        worstColumn = None
+        maxQuality = -math.inf
+        for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
+            if innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
                 setCopy = heuristics.copy()
-                setCopy.remove(innerColumn) # Remove items one by one
+                setCopy.remove(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print(f"Set {setCopy} has a quality of {columnQuality}")
-                if bestColumn == None or columnQuality > maxQuality:
-                    bestColumn = innerColumn
+                print(f"Heuristic {innerColumn} with existing set {heuristics} is {columnQuality}")
+                if worstColumn == None or columnQuality > maxQuality:
+                    worstColumn = innerColumn # This would be the column to remove, if we get the best accuracy without it.
                     maxQuality = columnQuality
                 if bestSet == None or columnQuality > bestQuality: # Update the best set so far
-                    print(f"New set: {setCopy} has column quality {columnQuality} > {bestQuality}")
                     bestSet = setCopy
                     bestQuality = columnQuality
-        if bestColumn != None:
-            print(f"Best next heuristic to remove is {bestColumn}")
-            heuristics.remove(bestColumn)
+        if worstColumn != None:
+            print(f"Best next heuristic to remove is {worstColumn}")
+            heuristics.remove(worstColumn)
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
-    return bestSet
+    return bestSet 
 
 def main():
-    dataframe = pandas.read_fwf("./CS170_Small_Data__96.txt", header=None)
-    print(f"The best set for this data set is {backwardSelection(dataframe)}")
+    dataframe = pandas.read_fwf("./CS170_Large_Data__6.txt", header=None)
+    rows: list[row.row] = []
+    for innerRow in dataframe.iterrows():
+        dataList : list[float] = innerRow[1].to_list()
+        dataList.pop(0)
+        rows.append(row.row(innerRow[1][0], dataList))
+    print(f"The best set for this data set is {forwardSelection(rows)}")
     #TODO: User inputs their own file name.
 
 if __name__ == "__main__":
