@@ -46,23 +46,23 @@ def forwardSelection(dataframe: list[row.row]) -> set():
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
     print(f"Intitial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
-        bestColumn = None
-        maxQuality = -math.inf
+        bestSetSoFar: set = None
+        maxQuality: float = -math.inf
         for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
             if not innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
                 setCopy = heuristics.copy()
                 setCopy.add(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
                 print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
-                if bestColumn == None or columnQuality > maxQuality:
-                    bestColumn = innerColumn
+                if bestSetSoFar == None or columnQuality > maxQuality:
+                    bestSetSoFar = setCopy
                     maxQuality = columnQuality
                 if bestSet == None or columnQuality > bestQuality: # Update the best set so far
                     bestSet = setCopy
                     bestQuality = columnQuality
-        if bestColumn != None:
-            print(f"Best next heuristic to add is {bestColumn} with a resulting accuracy of {maxQuality}")
-            heuristics.add(bestColumn)
+        if bestSetSoFar != None:
+            print(f"Best next set to go down is {bestSetSoFar} with a resulting accuracy of {maxQuality}")
+            heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
     return bestSet 
@@ -80,23 +80,23 @@ def backwardElimination(dataframe: list[row.row]) -> set():
         heuristics.add(index)
     print(f"Intitial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
-        worstColumn = None
-        maxQuality = -math.inf
+        bestSetSoFar: set = None
+        maxQuality: float = -math.inf
         for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
             if innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
                 setCopy = heuristics.copy()
                 setCopy.remove(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
                 print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
-                if columnQuality > maxQuality: # The worst column is characterized by the column which, by its removal, would result in the largest accuracy.
-                    worstColumn = innerColumn
+                if bestSetSoFar == None or columnQuality > maxQuality: # The worst column is characterized by the column which, by its removal, would result in the largest accuracy.
+                    bestSetSoFar = setCopy
                     maxQuality = columnQuality
                 if bestSet == None or columnQuality > bestQuality: # Update the best set globally
                     bestSet = setCopy
                     bestQuality = columnQuality
-        if worstColumn != None:
-            print(f"Best next heuristic to remove is {worstColumn} with a resulting accuracy of {maxQuality}")
-            heuristics.remove(worstColumn)
+        if bestSetSoFar != None:
+            print(f"Best next set to go down is {bestSetSoFar} with a resulting accuracy of {maxQuality}")
+            heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
     return bestSet 
