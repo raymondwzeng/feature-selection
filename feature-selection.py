@@ -45,7 +45,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
     if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
         return heuristics
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
-    print(f"Intitial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}\nBeginning Search...")
+    print(f"Initial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
@@ -80,7 +80,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
     heuristics: set[int] = set() # Begin with an empty set
     for index in range(NUM_COLUMNS): # Populate empty set
         heuristics.add(index)
-    print(f"Intitial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}.\nBeginning Search...")
+    print(f"Initial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}.\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
