@@ -19,14 +19,14 @@ def printSet(inputSet: set) -> None:
     print("}", end="")
 
 # Returns the integer corresponding to the class that the series should be.
-def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[row.row]) -> int:
+def nearestNeighborClassify(features: set, series: row.row, dataframe: list[row.row]) -> int:
     closestNeighbor: row.row = None
     minDistance: float = math.inf
     for innerRow in dataframe:
         sumDistance: float = 0
         if(innerRow != series): #Only compare distance with other rows, otherwise closest neighbor would be itself
-            for heuristic in heuristics:
-                squaredDistance = pow(innerRow.selectionData[heuristic] - series.selectionData[heuristic], 2)
+            for feature in features:
+                squaredDistance = pow(innerRow.selectionData[feature] - series.selectionData[feature], 2)
                 sumDistance += squaredDistance
             sumDistance = math.sqrt(sumDistance)
             if closestNeighbor == None or sumDistance < minDistance:
@@ -35,14 +35,14 @@ def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[ro
     return closestNeighbor.selectionClass #The 0th column is always the class.
 
 # Performs leave-one-out KxF across all rows, returning the percentage of success.
-# Takes a set of numbers indicating the column included in heuristics.
-def kcrossfold(heuristics: set, dataframe: list[row.row]) -> float:
+# Takes a set of numbers indicating the column included in features.
+def kcrossfold(features: set, dataframe: list[row.row]) -> float:
     numRuns = 0
     numSuccess = 0
-    if len(heuristics) == 0: # Return the default rate if we have an empty set.
+    if len(features) == 0: # Return the default rate if we have an empty set.
         return DEFAULT_RATE
     for innerRow in dataframe:
-        if(nearestNeighborClassify(heuristics, innerRow, dataframe) == innerRow.selectionClass):
+        if(nearestNeighborClassify(features, innerRow, dataframe) == innerRow.selectionClass):
             numSuccess += 1
         numRuns += 1
     return numSuccess/numRuns
@@ -51,21 +51,21 @@ def kcrossfold(heuristics: set, dataframe: list[row.row]) -> float:
 def forwardSelection(dataframe: list[row.row]) -> set():
     bestSet = None
     bestQuality = -math.inf
-    heuristics = set() #Begin with an empty set
+    features = set() #Begin with an empty set
     qualityList = []
     if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
-        return heuristics
+        return features
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
-    print(f"Initial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}\nBeginning Search...")
+    print(f"Initial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(features, dataframe)}\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
         for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
-            if not innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
-                setCopy = heuristics.copy()
+            if not innerColumn in features: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
+                setCopy = features.copy()
                 setCopy.add(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print("New heuristic set ", end="") 
+                print("New feature set ", end="") 
                 printSet(setCopy) 
                 print(f" has accuracy of {columnQuality}")
                 if bestSetSoFar == None or columnQuality > maxQuality:
@@ -78,7 +78,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
             print(f"Best next set to go down is ", end="")
             printSet(bestSetSoFar) 
             print(f" with a resulting accuracy of {maxQuality}")
-            heuristics = bestSetSoFar
+            features = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
     print(f"Best set: ", end="")
@@ -92,21 +92,21 @@ def backwardElimination(dataframe: list[row.row]) -> set():
     bestQuality = -math.inf
     qualityList = []
     if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
-        return heuristics
+        return features
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
-    heuristics: set[int] = set() # Begin with an empty set
+    features: set[int] = set() # Begin with an empty set
     for index in range(NUM_COLUMNS): # Populate empty set
-        heuristics.add(index)
-    print(f"Initial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}.\nBeginning Search...")
+        features.add(index)
+    print(f"Initial run of nearest neighbor with an full set results in accuracy of {kcrossfold(features, dataframe)}.\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
         for innerColumn in range(NUM_COLUMNS): # Check all of the columns each time
-            if innerColumn in heuristics: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
-                setCopy = heuristics.copy()
+            if innerColumn in features: # Do not add or even consider duplicate columns. NOTE: Now, class and data are separated, so we don't need to do the previous thing.
+                setCopy = features.copy()
                 setCopy.remove(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print("New heuristic set ", end="") 
+                print("New feature set ", end="") 
                 printSet(setCopy) 
                 print(f" has accuracy of {columnQuality}")
                 if bestSetSoFar == None or columnQuality > maxQuality: # The worst column is characterized by the column which, by its removal, would result in the largest accuracy.
@@ -119,7 +119,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
             print(f"Best next set to go down is ", end="")
             printSet(bestSetSoFar) 
             print(f" with a resulting accuracy of {maxQuality}")
-            heuristics = bestSetSoFar
+            features = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
     print(f"Best set: ", end="")
