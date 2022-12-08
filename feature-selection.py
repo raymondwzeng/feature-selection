@@ -44,6 +44,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
     if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
         return heuristics
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
+    print(f"Intitial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestColumn = None
         maxQuality = -math.inf
@@ -60,7 +61,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
                     bestSet = setCopy
                     bestQuality = columnQuality
         if bestColumn != None:
-            print(f"Best next heuristic to add is {bestColumn}")
+            print(f"Best next heuristic to add is {bestColumn} with a resulting accuracy of {maxQuality}")
             heuristics.add(bestColumn)
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
@@ -77,6 +78,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
     heuristics: set[int] = set() # Begin with an empty set
     for index in range(NUM_COLUMNS): # Populate empty set
         heuristics.add(index)
+    print(f"Intitial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         worstColumn = None
         maxQuality = -math.inf
@@ -93,7 +95,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
                     bestSet = setCopy
                     bestQuality = columnQuality
         if worstColumn != None:
-            print(f"Best next heuristic to remove is {worstColumn}")
+            print(f"Best next heuristic to remove is {worstColumn} with a resulting accuracy of {maxQuality}")
             heuristics.remove(worstColumn)
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
