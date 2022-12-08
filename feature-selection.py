@@ -3,6 +3,7 @@
 import pandas
 import math
 import row
+import time
 
 DEFAULT_RATE = 0.50
 
@@ -14,15 +15,11 @@ def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[ro
         sumDistance: float = 0
         if(innerRow != series): #Only compare distance with other rows, otherwise closest neighbor would be itself
             for heuristic in heuristics:
-                # print(f"Row {row[0]} with {row[1][heuristic]} and row {series[0]} with {series[1][heuristic]}")
                 squaredDistance = pow(innerRow.selectionData[heuristic] - series.selectionData[heuristic], 2)
                 sumDistance = sumDistance + squaredDistance
-            # print(f"The total distance across all heuristics is {sumDistance}.")
             if closestNeighbor == None or sumDistance < minDistance:
-                # print(f"The new closest neighbor is {row[0]}")
                 minDistance = sumDistance
                 closestNeighbor = innerRow
-    # print(f"The closest neighbor is {closestNeighbor} with class {closestNeighbor[0]}")
     return closestNeighbor.selectionClass #The 0th column is always the class.
 
 # Performs leave-one-out KxF across all rows, returning the percentage of success.
@@ -55,7 +52,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
                 setCopy = heuristics.copy()
                 setCopy.add(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print(f"Heuristic {innerColumn} with existing set {heuristics} is {columnQuality}")
+                print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
                 if bestColumn == None or columnQuality > maxQuality:
                     bestColumn = innerColumn
                     maxQuality = columnQuality
@@ -88,11 +85,11 @@ def backwardElimination(dataframe: list[row.row]) -> set():
                 setCopy = heuristics.copy()
                 setCopy.remove(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print(f"Heuristic {innerColumn} with existing set {heuristics} is {columnQuality}")
-                if worstColumn == None or columnQuality > maxQuality:
-                    worstColumn = innerColumn # This would be the column to remove, if we get the best accuracy without it.
+                print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
+                if columnQuality > maxQuality: # The worst column is characterized by the column which, by its removal, would result in the largest accuracy.
+                    worstColumn = innerColumn
                     maxQuality = columnQuality
-                if bestSet == None or columnQuality > bestQuality: # Update the best set so far
+                if bestSet == None or columnQuality > bestQuality: # Update the best set globally
                     bestSet = setCopy
                     bestQuality = columnQuality
         if worstColumn != None:
@@ -103,14 +100,26 @@ def backwardElimination(dataframe: list[row.row]) -> set():
     return bestSet 
 
 def main():
-    dataframe = pandas.read_fwf("./CS170_Large_Data__6.txt", header=None)
+    print("Welcome to Raymond's Feature Selection Program.")
+    fileName = input("Input the name of the file that you wish to read: ")
+    dataframe = pandas.read_fwf(fileName, header=None)
     rows: list[row.row] = []
     for innerRow in dataframe.iterrows():
         dataList : list[float] = innerRow[1].to_list()
         dataList.pop(0)
         rows.append(row.row(innerRow[1][0], dataList))
-    print(f"The best set for this data set is {forwardSelection(rows)}")
-    #TODO: User inputs their own file name.
+    algorithm = input("Input 1 for forward selection, or 2 for backward elimination: ")
+    timeNow: float = 0
+    if algorithm == '1':
+        timeNow = time.time()
+        print(f"The best set for this data set is {forwardSelection(rows)}")    
+    elif algorithm == '2':
+        timeNow = time.time()
+        print(f"The best set for this data set is {backwardElimination(rows)}")
+    else:
+        print("Invalid response.")
+    if timeNow != 0:
+        print(f"Time spent on algorithm in seconds: {time.time() - timeNow}")
 
 if __name__ == "__main__":
     main()
