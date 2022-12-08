@@ -45,7 +45,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
     if len(dataframe) == 0: # Failsafe: Return if we have 0 columns.
         return heuristics
     NUM_COLUMNS: int = len(dataframe[0].selectionData)
-    print(f"Intitial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}")
+    print(f"Intitial run of nearest neighbor with an empty set results in accuracy of {kcrossfold(heuristics, dataframe)}\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
@@ -66,6 +66,7 @@ def forwardSelection(dataframe: list[row.row]) -> set():
             heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
+    print(f"Best set: {bestSet} has an accuracy of {bestQuality}")
     return bestSet 
 
 # Performs backward elimination on all of the columns and returns the best set for the job.
@@ -79,7 +80,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
     heuristics: set[int] = set() # Begin with an empty set
     for index in range(NUM_COLUMNS): # Populate empty set
         heuristics.add(index)
-    print(f"Intitial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}")
+    print(f"Intitial run of nearest neighbor with an full set results in accuracy of {kcrossfold(heuristics, dataframe)}.\nBeginning Search...")
     for _ in range(NUM_COLUMNS): # Iterate over the entire range, basically doing an O(n^2) traversal over all columns looking for columns to add.
         bestSetSoFar: set = None
         maxQuality: float = -math.inf
@@ -100,6 +101,7 @@ def backwardElimination(dataframe: list[row.row]) -> set():
             heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
+    print(f"Best set: {bestSet} has an accuracy of {bestQuality}")
     return bestSet 
 
 def main():
@@ -116,17 +118,17 @@ def main():
     if len(rows) == 0:
         print("No rows - exiting.")
         return
-    print(f"Number of columns/heuristics: {len(rows[0].selectionData)}")
+    print(f"There are {len(rows[0].selectionData)} features, and {len(rows)} rows.")
     if algorithm == '1':
         timeNow = time.time()
-        print(f"The best set for this data set is {forwardSelection(rows)}")    
+        forwardSelection(rows)   
     elif algorithm == '2':
         timeNow = time.time()
-        print(f"The best set for this data set is {backwardElimination(rows)}")
+        backwardElimination(rows)
     else:
         print("Invalid response.")
     if timeNow != 0:
-        print(f"Time spent on algorithm in seconds: {time.time() - timeNow}")
+        print(f"Time spent on algorithm in seconds: {round(time.time() - timeNow, 2)}")
 
 if __name__ == "__main__":
     main()
