@@ -16,7 +16,8 @@ def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[ro
         if(innerRow != series): #Only compare distance with other rows, otherwise closest neighbor would be itself
             for heuristic in heuristics:
                 squaredDistance = pow(innerRow.selectionData[heuristic] - series.selectionData[heuristic], 2)
-                sumDistance = sumDistance + squaredDistance
+                sumDistance += squaredDistance
+            sumDistance = math.sqrt(sumDistance)
             if closestNeighbor == None or sumDistance < minDistance:
                 minDistance = sumDistance
                 closestNeighbor = innerRow
@@ -112,6 +113,10 @@ def main():
         rows.append(row.row(innerRow[1][0], dataList))
     algorithm = input("Input 1 for forward selection, or 2 for backward elimination: ")
     timeNow: float = 0
+    if len(rows) == 0:
+        print("No rows - exiting.")
+        return
+    print(f"Number of columns/heuristics: {len(rows[0].selectionData)}")
     if algorithm == '1':
         timeNow = time.time()
         print(f"The best set for this data set is {forwardSelection(rows)}")    
