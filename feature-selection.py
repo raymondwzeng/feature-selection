@@ -7,6 +7,17 @@ import time
 
 DEFAULT_RATE = 0.50
 
+def printSet(inputSet: set) -> None:
+    count = 0
+    print("{", end="")
+    for item in inputSet:
+        if count != len(inputSet) - 1:
+            print(item + 1, end=", ")
+        else:
+            print(item + 1, end="")
+        count += 1
+    print("}", end="")
+
 # Returns the integer corresponding to the class that the series should be.
 def nearestNeighborClassify(heuristics: set, series: row.row, dataframe: list[row.row]) -> int:
     closestNeighbor: row.row = None
@@ -54,7 +65,9 @@ def forwardSelection(dataframe: list[row.row]) -> set():
                 setCopy = heuristics.copy()
                 setCopy.add(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
+                print("New heuristic set ", end="") 
+                printSet(setCopy) 
+                print(f" has accuracy of {columnQuality}")
                 if bestSetSoFar == None or columnQuality > maxQuality:
                     bestSetSoFar = setCopy
                     maxQuality = columnQuality
@@ -62,11 +75,15 @@ def forwardSelection(dataframe: list[row.row]) -> set():
                     bestSet = setCopy
                     bestQuality = columnQuality
         if bestSetSoFar != None:
-            print(f"Best next set to go down is {bestSetSoFar} with a resulting accuracy of {maxQuality}")
+            print(f"Best next set to go down is ", end="")
+            printSet(bestSetSoFar) 
+            print(f" with a resulting accuracy of {maxQuality}")
             heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
-    print(f"Best set: {bestSet} has an accuracy of {bestQuality}")
+    print(f"Best set: ", end="")
+    printSet(bestSet)
+    print(f" has an accuracy of {bestQuality}")
     return bestSet 
 
 # Performs backward elimination on all of the columns and returns the best set for the job.
@@ -89,7 +106,9 @@ def backwardElimination(dataframe: list[row.row]) -> set():
                 setCopy = heuristics.copy()
                 setCopy.remove(innerColumn)
                 columnQuality = kcrossfold(setCopy, dataframe)
-                print(f"New heuristic set {setCopy} has accuracy of {columnQuality}")
+                print("New heuristic set ", end="") 
+                printSet(setCopy) 
+                print(f" has accuracy of {columnQuality}")
                 if bestSetSoFar == None or columnQuality > maxQuality: # The worst column is characterized by the column which, by its removal, would result in the largest accuracy.
                     bestSetSoFar = setCopy
                     maxQuality = columnQuality
@@ -97,11 +116,15 @@ def backwardElimination(dataframe: list[row.row]) -> set():
                     bestSet = setCopy
                     bestQuality = columnQuality
         if bestSetSoFar != None:
-            print(f"Best next set to go down is {bestSetSoFar} with a resulting accuracy of {maxQuality}")
+            print(f"Best next set to go down is ", end="")
+            printSet(bestSetSoFar) 
+            print(f" with a resulting accuracy of {maxQuality}")
             heuristics = bestSetSoFar
             qualityList.append(maxQuality)
     print(f"Quality list: {qualityList}")
-    print(f"Best set: {bestSet} has an accuracy of {bestQuality}")
+    print(f"Best set: ", end="")
+    printSet(bestSet)
+    print(f" has an accuracy of {bestQuality}")
     return bestSet 
 
 def main():
